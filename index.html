@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Sprite Sheet Generator</title>
+</head>
+<body>
+<script>
+(() => {
+  const existing = document.getElementById('tcf_sprite_generator');
+  if (existing) existing.remove();
+  const existingStyle = document.getElementById('tcf_sprite_generator_style');
+  if (existingStyle) existingStyle.remove();
+
+  const tcf_sprite_generator_style = document.createElement('style');
+  tcf_sprite_generator_style.id = 'tcf_sprite_generator_style';
+  tcf_sprite_generator_style.textContent = `
+    #tcf_sprite_generator {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: #1e1e2e;
+      color: #f0f0f0;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      z-index: 999999;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_dropzone {
+      border: 2px dashed #7a7aff;
+      border-radius: 10px;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      background: #2a2a3d;
+      transition: background 0.2s;
+      margin-bottom: 15px;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_dropzone.tcf_sprite_generator_dragover {
+      background: #3a3a5d;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_row label {
+      font-size: 14px;
+    }
+    #tcf_sprite_generator input[type="number"] {
+      width: 80px;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #555;
+      background: #111;
+      color: #fff;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    #tcf_sprite_generator button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_btn_generate {
+      background: #4caf50;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_btn_download {
+      background: #2196f3;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_btn_clean {
+      background: #e53935;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_preview_wrap {
+      margin-top: 15px;
+      text-align: center;
+      background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 50% / 20px 20px;
+      border-radius: 8px;
+      padding: 10px;
+      display: none;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_preview_wrap img {
+      max-width: 100%;
+      image-rendering: pixelated;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_filecount {
+      font-size: 12px;
+      color: #aaa;
+      text-align: center;
+      margin-top: -8px;
+      margin-bottom: 10px;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_close {
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      cursor: pointer;
+      font-size: 18px;
+      color: #ccc;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_thumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      max-height: 140px;
+      overflow-y: auto;
+      background: #111;
+      border-radius: 8px;
+      padding: 6px;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_thumb_item {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 50% / 10px 10px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_thumb_item img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+    #tcf_sprite_generator .tcf_sprite_generator_thumb_item span {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      font-size: 9px;
+      padding: 1px 3px;
+      border-radius: 3px 0 0 0;
+    }
+  `;
+  document.head.appendChild(tcf_sprite_generator_style);
+
+  const tcf_sprite_generator = document.createElement('div');
+  tcf_sprite_generator.id = 'tcf_sprite_generator';
+  tcf_sprite_generator.innerHTML = `
+    <span class="tcf_sprite_generator_close" id="tcf_sprite_generator_close">✕</span>
+    <div class="tcf_sprite_generator_title">Sprite Sheet Generator</div>
+    <div class="tcf_sprite_generator_dropzone" id="tcf_sprite_generator_dropzone">Resimleri Buraya Sürükle</div>
+    <input type="file" id="tcf_sprite_generator_fileinput" accept="image/png" multiple style="display:none;">
+    <div class="tcf_sprite_generator_filecount" id="tcf_sprite_generator_filecount"></div>
+    <div class="tcf_sprite_generator_thumbs" id="tcf_sprite_generator_thumbs"></div>
+    <div class="tcf_sprite_generator_row">
+      <label>Sütun Sayısı</label>
+      <input type="number" id="tcf_sprite_generator_cols" min="1" value="1">
+    </div>
+    <div class="tcf_sprite_generator_row">
+      <label>Satır Sayısı</label>
+      <input type="number" id="tcf_sprite_generator_rows" min="1" value="1">
+    </div>
+    <div class="tcf_sprite_generator_buttons">
+      <button class="tcf_sprite_generator_btn_generate" id="tcf_sprite_generator_btn_generate">Generate</button>
+      <button class="tcf_sprite_generator_btn_download" id="tcf_sprite_generator_btn_download">Download</button>
+      <button class="tcf_sprite_generator_btn_clean" id="tcf_sprite_generator_btn_clean">Clean</button>
+    </div>
+    <div class="tcf_sprite_generator_preview_wrap" id="tcf_sprite_generator_preview_wrap">
+      <img id="tcf_sprite_generator_preview_img">
+    </div>
+  `;
+  document.body.appendChild(tcf_sprite_generator);
+
+  let tcf_sprite_generator_images = [];
+  let tcf_sprite_generator_canvas = null;
+
+  const tcf_sprite_generator_dropzone = document.getElementById('tcf_sprite_generator_dropzone');
+  const tcf_sprite_generator_fileinput = document.getElementById('tcf_sprite_generator_fileinput');
+  const tcf_sprite_generator_colsInput = document.getElementById('tcf_sprite_generator_cols');
+  const tcf_sprite_generator_rowsInput = document.getElementById('tcf_sprite_generator_rows');
+  const tcf_sprite_generator_btnGenerate = document.getElementById('tcf_sprite_generator_btn_generate');
+  const tcf_sprite_generator_btnDownload = document.getElementById('tcf_sprite_generator_btn_download');
+  const tcf_sprite_generator_btnClean = document.getElementById('tcf_sprite_generator_btn_clean');
+  const tcf_sprite_generator_previewWrap = document.getElementById('tcf_sprite_generator_preview_wrap');
+  const tcf_sprite_generator_previewImg = document.getElementById('tcf_sprite_generator_preview_img');
+  const tcf_sprite_generator_fileCountLabel = document.getElementById('tcf_sprite_generator_filecount');
+  const tcf_sprite_generator_thumbs = document.getElementById('tcf_sprite_generator_thumbs');
+  const tcf_sprite_generator_closeBtn = document.getElementById('tcf_sprite_generator_close');
+
+  function tcf_sprite_generator_updateFileCount() {
+    tcf_sprite_generator_fileCountLabel.textContent = tcf_sprite_generator_images.length
+      ? `${tcf_sprite_generator_images.length} dosya yüklendi`
+      : '';
+  }
+
+  function tcf_sprite_generator_renderThumbs() {
+    tcf_sprite_generator_thumbs.innerHTML = '';
+    tcf_sprite_generator_images.forEach((img, i) => {
+      const item = document.createElement('div');
+      item.className = 'tcf_sprite_generator_thumb_item';
+      if (img) {
+        const thumbImg = document.createElement('img');
+        thumbImg.src = img.src;
+        item.appendChild(thumbImg);
+      }
+      const label = document.createElement('span');
+      label.textContent = i + 1;
+      item.appendChild(label);
+      tcf_sprite_generator_thumbs.appendChild(item);
+    });
+  }
+
+  function tcf_sprite_generator_loadFiles(fileList) {
+    const files = Array.from(fileList).filter(f => f.type === 'image/png');
+    if (files.length === 0) return;
+    const startIndex = tcf_sprite_generator_images.length;
+    files.forEach(() => tcf_sprite_generator_images.push(null));
+    tcf_sprite_generator_renderThumbs();
+    files.forEach((file, idx) => {
+      const targetIndex = startIndex + idx;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          tcf_sprite_generator_images[targetIndex] = img;
+          tcf_sprite_generator_updateFileCount();
+          tcf_sprite_generator_renderThumbs();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  tcf_sprite_generator_dropzone.addEventListener('click', () => tcf_sprite_generator_fileinput.click());
+
+  tcf_sprite_generator_fileinput.addEventListener('change', (e) => {
+    tcf_sprite_generator_loadFiles(e.target.files);
+  });
+
+  tcf_sprite_generator_dropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    tcf_sprite_generator_dropzone.classList.add('tcf_sprite_generator_dragover');
+  });
+
+  tcf_sprite_generator_dropzone.addEventListener('dragleave', () => {
+    tcf_sprite_generator_dropzone.classList.remove('tcf_sprite_generator_dragover');
+  });
+
+  tcf_sprite_generator_dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    tcf_sprite_generator_dropzone.classList.remove('tcf_sprite_generator_dragover');
+    tcf_sprite_generator_loadFiles(e.dataTransfer.files);
+  });
+
+  tcf_sprite_generator_btnGenerate.addEventListener('click', () => {
+    if (tcf_sprite_generator_images.length === 0) return;
+    const validImages = tcf_sprite_generator_images.filter(img => img !== null);
+    if (validImages.length === 0) return;
+
+    const cols = parseInt(tcf_sprite_generator_colsInput.value, 10) || 1;
+    const rows = parseInt(tcf_sprite_generator_rowsInput.value, 10) || 1;
+    const cellWidth = validImages[0].width;
+    const cellHeight = validImages[0].height;
+
+    if (tcf_sprite_generator_canvas) {
+      tcf_sprite_generator_canvas.remove();
+      tcf_sprite_generator_canvas = null;
+    }
+
+    tcf_sprite_generator_canvas = document.createElement('canvas');
+    tcf_sprite_generator_canvas.width = cellWidth * cols;
+    tcf_sprite_generator_canvas.height = cellHeight * rows;
+    const ctx = tcf_sprite_generator_canvas.getContext('2d');
+    ctx.clearRect(0, 0, tcf_sprite_generator_canvas.width, tcf_sprite_generator_canvas.height);
+
+    validImages.forEach((img, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      if (row >= rows) return;
+      ctx.drawImage(img, col * cellWidth, row * cellHeight, cellWidth, cellHeight);
+    });
+
+    tcf_sprite_generator_previewImg.src = tcf_sprite_generator_canvas.toDataURL('image/png');
+    tcf_sprite_generator_previewWrap.style.display = 'block';
+  });
+
+  tcf_sprite_generator_btnDownload.addEventListener('click', () => {
+    if (!tcf_sprite_generator_canvas) return;
+    tcf_sprite_generator_canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = 'spritesheet.png';
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  });
+
+  tcf_sprite_generator_btnClean.addEventListener('click', () => {
+    tcf_sprite_generator_images = [];
+    tcf_sprite_generator_canvas = null;
+    tcf_sprite_generator_previewImg.src = '';
+    tcf_sprite_generator_previewWrap.style.display = 'none';
+    tcf_sprite_generator_fileinput.value = '';
+    tcf_sprite_generator_colsInput.value = 1;
+    tcf_sprite_generator_rowsInput.value = 1;
+    tcf_sprite_generator_updateFileCount();
+    tcf_sprite_generator_renderThumbs();
+  });
+
+  tcf_sprite_generator_closeBtn.addEventListener('click', () => {
+    tcf_sprite_generator.remove();
+    tcf_sprite_generator_style.remove();
+  });
+})();
+</script>
+</body>
+</html>
