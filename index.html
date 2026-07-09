@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<title>Sprite Sheet Generator</title>
+<title>Sprite Sheet Packager</title>
 </head>
 <body>
 <script>
@@ -161,17 +161,17 @@
   tcf_sprite_generator.id = 'tcf_sprite_generator';
   tcf_sprite_generator.innerHTML = `
     <span class="tcf_sprite_generator_close" id="tcf_sprite_generator_close">✕</span>
-    <div class="tcf_sprite_generator_title">Sprite Sheet Generator</div>
-    <div class="tcf_sprite_generator_dropzone" id="tcf_sprite_generator_dropzone">Resimleri Buraya Sürükle</div>
+    <div class="tcf_sprite_generator_title">Sprite Sheet Packager</div>
+    <div class="tcf_sprite_generator_dropzone" id="tcf_sprite_generator_dropzone">Drag sprite files here...</div>
     <input type="file" id="tcf_sprite_generator_fileinput" accept="image/png" multiple style="display:none;">
     <div class="tcf_sprite_generator_filecount" id="tcf_sprite_generator_filecount"></div>
     <div class="tcf_sprite_generator_thumbs" id="tcf_sprite_generator_thumbs"></div>
     <div class="tcf_sprite_generator_row">
-      <label>Sütun Sayısı</label>
+      <label>Columns Count</label>
       <input type="number" id="tcf_sprite_generator_cols" min="1" value="1">
     </div>
     <div class="tcf_sprite_generator_row">
-      <label>Satır Sayısı</label>
+      <label>Rows Count</label>
       <input type="number" id="tcf_sprite_generator_rows" min="1" value="1">
     </div>
     <div class="tcf_sprite_generator_buttons">
